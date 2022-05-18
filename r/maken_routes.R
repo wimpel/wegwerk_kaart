@@ -45,9 +45,11 @@ df <-
             mutate(naam = paste0(bladen[i], "_", routes[[i]][[j]][1,2], routes[[i]][[j]][1,1])) %>%
             mutate(groep = bladen[i]) %>%
             mutate(groepVol = paste0("groups.",bladen[i])) %>%
-            mutate(type = ifelse(grepl("stremming", naam), "stremming", "omleiding"))
+            mutate(type = ifelse(grepl("stremming", naam), "stremming", "omleiding")) %>%
+            mutate(kleur = ifelse(type == "stremming", "red", "green"))
         }))
     })
   )
 
 saveRDS(df, "./output/routes.rds")
+saveRDS(df, "./R/app/data/routes.rds")
