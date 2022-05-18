@@ -96,7 +96,13 @@ server <- ( function( input, output, session ) {
     leafletProxy("leafletMap" ) %>%
       clearMarkers() %>%
       clearShapes() %>%
-      addPolylines(data = route.sel()) %>%
+      #addPolylines(data = route.sel()) %>%
+      addArrowhead(data = route.sel(),
+                   color = ~kleur,
+                   fillColor = ~kleur,
+                   opacity = 1,
+                   options = arrowheadOptions(size = "15px",frequency = "5000m")
+      ) %>%
       #opnieuw opbouwen legenda
       clearControls() %>%
       addLayersControl(

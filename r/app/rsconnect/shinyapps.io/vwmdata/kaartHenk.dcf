@@ -1,0 +1,13 @@
+name: kaartHenk
+title: kaartHenk
+username:
+account: vwmdata
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6324564
+bundleId: 5917971
+url: https://vwmdata.shinyapps.io/kaartHenk/
+when: 1652859934.23878
+lastSyncTime: 1652859934.23879
+asMultiple: FALSE
+asStatic: FALSE
