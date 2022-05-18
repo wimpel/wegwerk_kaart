@@ -52,12 +52,12 @@ df <-
       }))
     })
   )
-df
-mapview::mapview(df)
+#df
+# mapview::mapview(df)
 # get boundaries for map
 grens <- sf::st_bbox(df) %>% as.vector()
 # create named list of geojson routes
-plotdata <- lapply(split(df, f = df$naam), sf_geojson)
+# plotdata <- lapply(split(df, f = df$naam), sf_geojson)
 #  PLUGIN SECTION
 # from: https://github.com/slutske22/leaflet-arrowheads
 arrowHead <- htmlDependency(
@@ -121,7 +121,8 @@ leaflet() %>%
     // funciton to define line dash based on 
     //  feature.properties.type
     function getDash(d) {
-      return d == 'stremming' ? '20' :
+      // return d == 'stremming' ? '20' :
+      return d == 'stremming' ? '' :
              d == 'omleiding' ? '' :
                                 '';
     }
@@ -129,7 +130,7 @@ leaflet() %>%
     function newstyle(feature) {
       return {
           color: getColor(feature.properties.type),
-          weight: 10,
+          weight: 5,
           opacity: 1,
           dashArray: getDash(feature.properties.type),
           fillOpacity: 0.7
@@ -152,7 +153,7 @@ leaflet() %>%
               return feature.properties.groep == type;
             },
             style: newstyle,
-            arrowheads: {frequency: 'endonly', yawn: 45, size: '30px', fill: true}
+            arrowheads: {frequency: 'endonly', yawn: 60, size: '25px', fill: false}
           })
           .on('mouseover', function (e) {e.target.setStyle({weight: 15, opacity: 1 });})
           .on('mouseout', function (e) {e.target.setStyle({weight: 10, opacity: 0.75});})
