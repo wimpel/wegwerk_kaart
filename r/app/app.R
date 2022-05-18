@@ -1,3 +1,8 @@
+#
+# publicatie:
+# https://vwmdata.shinyapps.io/kaartHenk/
+#
+
 library(data.table)
 library(leaflet)
 library(leaflet.extras2)
@@ -101,7 +106,7 @@ server <- ( function( input, output, session ) {
                    color = ~kleur,
                    fillColor = ~kleur,
                    opacity = 1,
-                   options = arrowheadOptions(size = "15px",frequency = "5000m")
+                   options = arrowheadOptions(size = "15px",frequency = "endonly")
       ) %>%
       #opnieuw opbouwen legenda
       clearControls() %>%

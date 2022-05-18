@@ -14,6 +14,6 @@ leaflet() %>%
                color = ~kleur,
                fillColor = ~kleur,
                opacity = 1,
-               options = arrowheadOptions(size = "15px",frequency = "5000m")
+               options = arrowheadOptions(size = "15px",frequency = "endonly")
                )
   
