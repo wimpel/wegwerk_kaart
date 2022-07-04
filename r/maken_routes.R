@@ -1,5 +1,6 @@
 library(data.table)
 library(tidyverse)
+library(openxlsx)
 library(readxl)
 library(osrm)
 library(leaflet)
@@ -7,49 +8,52 @@ library(geojsonsf)
 library(htmltools)
 library(htmlwidgets)
 # read excel file
-bestand <- "./data/twitterkaartjes.xlsx"
-bladen <- readxl::excel_sheets(bestand)
-xldata <- lapply(bladen, function(x) {
-  readxl::read_excel(path = bestand, sheet = x,
-                     col_types = c(rep(c("numeric", "text"), 2), rep("numeric", 2), rep("text", 2), "numeric"))
-})
-names(xldata) <- bladen
-#vullen latlon op basis van ndw
-xldata <- lapply(xldata, function(x) {
-  temp <- setDT(x)
-  #temp <- setDT(xldata[[1]]) #  !! <-- voor testdoeleinden --> !!
-  temp[, id := .I]
-  temp2 <- temp[is.na(lat), ]
-  nwb.temp <- rwsvwm::nwb_match(id = temp2$id, 
-                                wegnaam_ = temp2$wegnaam, rijbaan = temp2$rijbaan, hectometer_ = temp2$hectometer, 
-                                rds_nwb_ = "i:/brondata/nwb/20201101-nwb_bewerkt.rds")[[1]]
-  temp[is.na(lat), c("lat", "lon") := 
-         nwb.temp[temp[is.na(lat), ], .(latitude.nwb, longitude.nwb), on = .(id)]]
-  temp[, id := NULL]
-  setDF(temp)
-  return(temp)
-})
-
+xldata <- setDT(
+  readxl::read_excel(path = "./data/testinput.xlsx", 
+                     sheet = 1,
+                     col_types = c(rep("text", 2), rep(c("numeric", "text"), 2), 
+                                   rep("numeric", 2), rep("text", 2), "numeric", 
+                                   rep("numeric", 4))))
+# create posix timestamps with start / end of work
+xldata[, `:=`(van = openxlsx::convertToDateTime(datumVan + tijdVan),
+              tot = openxlsx::convertToDateTime(datumTot + tijdTot))]
+# create somerowid's
+xldata[, id := .I]
+# if no coordinates have been entered, try to merge them from nwb
+nwb <- rwsvwm::nwb_match(id = xldata$id, 
+                         wegnaam_ = xldata$wegnaam, 
+                         rijbaan = xldata$rijbaan, 
+                         hectometer_ = xldata$hectometer, 
+                         rds_nwb_ = "./data/20201101-nwb_bewerkt.rds")[[1]]
+xldata[nwb, 
+       `:=`(lat = ifelse(is.na(lat), i.latitude.nwb, lat),
+            lon = ifelse(is.na(lon), i.longitude.nwb, lon)), 
+       on = .(id)]
 # split individual routes (will become polylines later on)
-routes <- lapply(xldata, function(x) split(x, f = x$route))
-
-# create real routes, using  osm routing
-df <- 
-  dplyr::bind_rows(
-    lapply(seq.int(routes), function(i) {
-      dplyr::bind_rows(
-        lapply(seq.int(lengths(routes)[i]), function(j) {
-          temp <- osrmRoute(loc = as.data.frame(routes[[i]][[j]][, c("lon", "lat")]),
-                            overview = "full", returnclass = "sf",
-                            osrm.profile = "car") %>%
-            mutate(naam = paste0(bladen[i], "_", routes[[i]][[j]][1,2], routes[[i]][[j]][1,1])) %>%
-            mutate(groep = bladen[i]) %>%
-            mutate(groepVol = paste0("groups.",bladen[i])) %>%
-            mutate(type = ifelse(grepl("stremming", naam), "stremming", "omleiding")) %>%
-            mutate(kleur = ifelse(type == "stremming", "red", "green"))
-        }))
-    })
-  )
+routes <- split(xldata, by = "route")
+# create real routes, using osm routing from osrm
+df <- dplyr::bind_rows(
+  lapply(seq.int(routes), function(i) {
+  # create  osrm route
+  temp <- osrmRoute(loc = as.data.frame(routes[[i]][, c("lon", "lat")]),
+                    overview = "full", returnclass = "sf",
+                    osrm.profile = "car")
+  # join relevant data
+  temp <- temp %>%
+    dplyr::mutate(
+      type = routes[[i]]$routeType[1],
+      van = routes[[i]]$van[1],
+      tot = routes[[i]]$tot[1],
+      label = paste0("<p><b>", routes[[i]]$werk[1], "</b> - ", routes[[i]]$routeType[1], "<br>",
+                     ifelse(is.na(routes[[i]]$omschrijving[1]), "geen omschrijving", routes[[i]]$omschrijving[1]), "<br>",
+                     "<br>",
+                     "van: ", as.character(routes[[i]]$van[1]), "<br>",
+                     "tot: ", as.character(routes[[i]]$tot[1]), "<br>"),
+      kleur = case_when(type == "stremming" ~ "red",
+                        type == "omleiding" ~ "green", 
+                        TRUE ~ "orange"))
+  return(temp)
+  }))
 
 saveRDS(df, "./output/routes.rds")
 saveRDS(df, "./R/app/data/routes.rds")

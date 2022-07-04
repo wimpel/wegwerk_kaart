@@ -10,17 +10,13 @@ library(sf)
 library(DT)
 library(shiny)
 library(shinyTime)
+library(htmltools)
 
-routes <- readRDS("./data/routes.rds")
-werkzaamheden <- readRDS("./data/werkzaamheden.rds")
-#maak tijdstempels
-werkzaamheden[, `:=`(timestamp_van = as.POSIXct(paste0(van, " ", van_uur), tz = "Europe/Amsterdam"),
-                     timestamp_tot = as.POSIXct(paste0(tot, " ", tot_uur), tz = "Europe/Amsterdam"))]
-
+werkzaamheden <- readRDS("./data/routes.rds")
 
 ### test
 #routes <- readRDS("./R/app/data/routes.rds")
-#werkzaamheden <- readRDS("./R/app/data/werkzaamheden.rds")
+# werkzaamheden <- readRDS("./R/app/data/routes.rds")
 ### /test
 
 ui <- (fluidPage(
@@ -31,9 +27,9 @@ ui <- (fluidPage(
       # __user input -----
       dateInput( 'dateInputVan',
                  label     = "Van", 
-                 value     = min(werkzaamheden$van, na.rm = TRUE),
-                 min       = min(werkzaamheden$van, na.rm = TRUE),
-                 max       = max(werkzaamheden$tot, na.rm = TRUE),
+                 value     = min(as.Date(werkzaamheden$van, tz = "Europe/Amsterdam"), na.rm = TRUE),
+                 min       = min(as.Date(werkzaamheden$van, tz = "Europe/Amsterdam"), na.rm = TRUE),
+                 max       = max(as.Date(werkzaamheden$tot, tz = "Europe/Amsterdam"), na.rm = TRUE),
                  format    = "dd-mm-yyyy",
                  startview = "month",
                  weekstart = 1,
@@ -46,9 +42,9 @@ ui <- (fluidPage(
                  minute.steps = 30L ),
       dateInput( 'dateInputTot',
                  label     = "Tot", 
-                 value     = min(werkzaamheden$van, na.rm = TRUE) + 1,
-                 min       = min(werkzaamheden$van, na.rm = TRUE),
-                 max       = max(werkzaamheden$tot, na.rm = TRUE),
+                 value     = min(as.Date(werkzaamheden$van, tz = "Europe/Amsterdam"), na.rm = TRUE) + 1,
+                 min       = min(as.Date(werkzaamheden$van, tz = "Europe/Amsterdam"), na.rm = TRUE),
+                 max       = max(as.Date(werkzaamheden$tot, tz = "Europe/Amsterdam"), na.rm = TRUE),
                  format    = "dd-mm-yyyy",
                  startview = "month",
                  weekstart = 1,
@@ -68,11 +64,11 @@ ui <- (fluidPage(
                    column(width = 12,
                           uiOutput("pick_col1"),
                           tableOutput("dataTabel")
-                   ),
-                   column(width = 12,
-                          uiOutput("pick_col2"),
-                          tableOutput("dataTabel2")
-                   )
+                   )#,
+                   #column(width = 12,
+                  #        uiOutput("pick_col2"),
+                  #        tableOutput("dataTabel2")
+                  # )
                  )
         )
       )
@@ -90,7 +86,7 @@ server <- ( function( input, output, session ) {
     tot.filter <- as.POSIXct(paste0(as.character(input$dateInputTot), "T", 
                                     format(input$tijdInputTot, "%H:%M")), format = "%Y-%m-%dT%H:%M", 
                              tz = "Europe/Amsterdam")
-    temp.sel <- werkzaamheden[timestamp_van <= tot.filter & timestamp_tot >= van.filter, ]
+    temp.sel <- werkzaamheden[werkzaamheden$van <= tot.filter & werkzaamheden$tot >= van.filter, ]
     ### test
     #temp.sel <- werkzaamheden[van <= as.Date("2022-01-02") & tot >= as.Date("2022-01-02"), ]
     ### /test
@@ -112,28 +108,17 @@ server <- ( function( input, output, session ) {
         updateTimeInput(session, "tijdInputTot", value = input$tijdInputVan + 1800)
       }
     })
-  # selecteer de werkzaamheden die binnen het opgegeven tijdvenster vallen
-  route.sel <- reactive({
-    req(werk.sel())
-    temp.sel <- routes[routes$groep %in% unique(werk.sel()$groep), ]
-    return(temp.sel)
-  })
-  
+
   tabelData <- reactive({
     req(werk.sel())
     temp <- copy(werk.sel())
-    temp[, van := as.character(van)]
-    temp[, tot := as.character(tot)]
-    return(temp)
+    temp %>%
+      dplyr::mutate(van = as.character(van),
+                    tot = as.character(tot)) %>%
+      sf::st_drop_geometry()
   })
   
-  tabelData2 <- reactive({
-    req(werkzaamheden)
-    temp <- copy(werkzaamheden)
-    temp[, van := as.character(van)]
-    temp[, tot := as.character(tot)]
-    return(temp)
-  })
+  tabelData2 <- werkzaamheden %>% sf::st_drop_geometry()
   
   output$dataTabel <- renderTable( tabelData() )
   output$dataTabel2 <- renderTable( tabelData2() )
@@ -148,19 +133,20 @@ server <- ( function( input, output, session ) {
     leafletProxy("leafletMap" ) %>%
       clearMarkers() %>%
       clearShapes() %>%
-      #addPolylines(data = route.sel()) %>%
-      addArrowhead(data = route.sel(),
+      addArrowhead(data = werk.sel(),
                    color = ~kleur,
                    fillColor = ~kleur,
                    opacity = 1,
+                   label = ~lapply(label, HTML),
                    options = arrowheadOptions(size = "15px",frequency = "endonly")
       ) %>%
       #opnieuw opbouwen legenda
-      clearControls() %>%
-      addLayersControl(
-        baseGroups = c( "OSM (default)", "PDOK luchtfoto" ),
-        overlayGroups = c( "Stremming" ),
-        options = layersControlOptions( collapsed = FALSE ) )
+      clearControls() 
+    # %>%
+    #   addLayersControl(
+    #     baseGroups = c( "OSM (default)", "PDOK luchtfoto" ),
+    #     overlayGroups = c( "Stremming" ),
+    #     options = layersControlOptions( collapsed = FALSE ) )
   })
 
 })
