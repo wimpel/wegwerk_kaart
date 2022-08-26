@@ -9,11 +9,11 @@ library(htmltools)
 library(htmlwidgets)
 # read excel file
 xldata <- setDT(
-  readxl::read_excel(path = "./data/testinput.xlsx", 
+  suppressWarnings(readxl::read_excel(path = "./data/werkzaamheden.xlsx", 
                      sheet = 1,
                      col_types = c(rep("text", 2), rep(c("numeric", "text"), 2), 
                                    rep("numeric", 2), rep("text", 2), "numeric", 
-                                   rep("numeric", 4))))
+                                   rep("numeric", 4), "text"))))
 # create posix timestamps with start / end of work
 xldata[, `:=`(van = openxlsx::convertToDateTime(datumVan + tijdVan),
               tot = openxlsx::convertToDateTime(datumTot + tijdTot))]
@@ -30,7 +30,7 @@ xldata[nwb,
             lon = ifelse(is.na(lon), i.longitude.nwb, lon)), 
        on = .(id)]
 # split individual routes (will become polylines later on)
-routes <- split(xldata, by = "route")
+routes <- split(xldata, by = c("werk", "route"))
 # create real routes, using osm routing from osrm
 df <- dplyr::bind_rows(
   lapply(seq.int(routes), function(i) {
@@ -51,9 +51,13 @@ df <- dplyr::bind_rows(
                      "tot: ", as.character(routes[[i]]$tot[1]), "<br>"),
       kleur = case_when(type == "stremming" ~ "red",
                         type == "omleiding" ~ "green", 
-                        TRUE ~ "orange"))
+                        TRUE ~ "orange"),
+      plaatje = routes[[i]]$image[1])
   return(temp)
   }))
 
 saveRDS(df, "./output/routes.rds")
 saveRDS(df, "./R/app/data/routes.rds")
+
+# test
+#leaflet() %>% addTiles() %>% addPolylines(data = df, color = ~kleur, label = ~label, popup = ~leafpop::popupImage(plaatje))

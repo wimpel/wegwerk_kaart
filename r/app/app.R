@@ -6,6 +6,7 @@
 library(data.table)
 library(leaflet)
 library(leaflet.extras2)
+library(leafpop)
 library(sf)
 library(DT)
 library(shiny)
@@ -37,7 +38,7 @@ ui <- (fluidPage(
                  autoclose = TRUE ),
       timeInput( inputId      = "tijdInputVan",
                  label        = "",
-                 value        = as.ITime("20:00:00"), 
+                 value        = as.POSIXct("20:00:00", "%H:%M:%S", tz = "Europe/Amsterdam"), 
                  seconds      = FALSE,
                  minute.steps = 30L ),
       dateInput( 'dateInputTot',
@@ -52,7 +53,7 @@ ui <- (fluidPage(
                  autoclose = TRUE ),
       timeInput( inputId      = "tijdInputTot",
                  label        = "",
-                 value        = as.ITime("05:00:00"), 
+                 value        = as.POSIXct("05:00:00", "%H:%M:%S", tz = "Europe/Amsterdam"), 
                  seconds      = FALSE,
                  minute.steps = 30L ),
     ),
@@ -129,8 +130,13 @@ server <- ( function( input, output, session ) {
       addScaleBar( position = "bottomleft" )
   })
 
+  plaatjes <- reactive({
+    req(werk.sel())
+    werk.sel()$plaatje
+  })
+  
   observe({
-    leafletProxy("leafletMap" ) %>%
+    leafletProxy("leafletMap") %>%
       clearMarkers() %>%
       clearShapes() %>%
       addArrowhead(data = werk.sel(),
@@ -138,6 +144,7 @@ server <- ( function( input, output, session ) {
                    fillColor = ~kleur,
                    opacity = 1,
                    label = ~lapply(label, HTML),
+                   popup = leafpop::popupImage(plaatjes(), src = "local", embed = TRUE),
                    options = arrowheadOptions(size = "15px",frequency = "endonly")
       ) %>%
       #opnieuw opbouwen legenda
