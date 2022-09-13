@@ -9,11 +9,12 @@ library(htmltools)
 library(htmlwidgets)
 # read excel file
 xldata <- setDT(
-  suppressWarnings(readxl::read_excel(path = "./data/werkzaamheden.xlsx", 
+  # suppressWarnings(readxl::read_excel(path = "./data/werkzaamheden.xlsx",
+  suppressWarnings(readxl::read_excel(path = "./data/20220912.xlsx", 
                      sheet = 1,
                      col_types = c(rep("text", 2), rep(c("numeric", "text"), 2), 
                                    rep("numeric", 2), rep("text", 2), "numeric", 
-                                   rep("numeric", 4), "text"))))
+                                   rep("numeric", 4), rep("text", 2)))))
 # create posix timestamps with start / end of work
 xldata[, `:=`(van = openxlsx::convertToDateTime(datumVan + tijdVan),
               tot = openxlsx::convertToDateTime(datumTot + tijdTot))]

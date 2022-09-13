@@ -5,9 +5,9 @@ account: vwmdata
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6324564
-bundleId: 6239870
+bundleId: 6293018
 url: https://vwmdata.shinyapps.io/kaartHenk/
-when: 1661500652.12568
-lastSyncTime: 1661500652.12569
+when: 1662973603.55432
+lastSyncTime: 1662973603.55486
 asMultiple: FALSE
 asStatic: FALSE

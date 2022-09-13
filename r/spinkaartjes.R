@@ -6,8 +6,8 @@
 library(data.table)
 library(osrm)
 # test periode
-van = as.POSIXct("2022-07-11 00:00:00", tz = "Europe/Amsterdam")
-tot = as.POSIXct("2022-07-18 23:59:59", tz = "Europe/Amsterdam")
+van = as.POSIXct("2022-09-09 00:00:00", tz = "Europe/Amsterdam")
+tot = as.POSIXct("2022-12-31 23:59:59", tz = "Europe/Amsterdam")
 # lees meest recente allcurrentmeasures
 DT <- fread(tail(list.files("i:/brondata/spin/", 
                             pattern = "^AllCurrentMeasures.*\\.csv$", 
@@ -20,8 +20,8 @@ DT[, Eind := as.POSIXct(Eind, format = "%d-%m-%y %H:%M:%S", tz = "Europe/Amsterd
 DT[, `Werkelijke start` := as.POSIXct(`Werkelijke start`, format = "%d-%m-%y %H:%M:%S", tz = "Europe/Amsterdam")]
 DT[, `Werkelijk eind` := as.POSIXct(`Werkelijk eind`, format = "%d-%m-%y %H:%M:%S", tz = "Europe/Amsterdam")]
 # filter op tijdperiode
-DT <- DT[Start <= as.POSIXct("2022-07-10 23:59:59", tz = "Europe/Amsterdam") &
-           Eind >= as.POSIXct("2022-07-04 00:00:00", tz = "Europe/Amsterdam"), ]
+DT <- DT[Start <= as.POSIXct("2022-09-16 23:59:59", tz = "Europe/Amsterdam") &
+           Eind >= as.POSIXct("2022-09-09 00:00:00", tz = "Europe/Amsterdam"), ]
 # filter verkeershindercategorie van C of hoger
 DT <- DT[Verkeershindercategorie %in% c("C", "B", "A") |
            Verkeershinderklasse %in% c("10 - 30 min.", "> 30 min."), ]
@@ -74,4 +74,5 @@ df <- dplyr::bind_rows(
   }))
 
 library(leaflet)
-leaflet() %>% addTiles() %>% addPolylines(data = df, opacity = 0.8)
+leaflet() %>% addProviderTiles(providers$CartoDB.Positron) %>% 
+  addPolylines(data = df, opacity = 0.8, color = "red")
