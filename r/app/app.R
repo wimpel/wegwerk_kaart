@@ -13,7 +13,10 @@ library(shiny)
 library(shinyTime)
 library(htmltools)
 
-werkzaamheden <- readRDS("./data/routes.rds")
+werkzaamheden.cbm <- readRDS("./data/routes.rds")
+werkzaamheden.spin <- readRDS("./data/spinroutes.rds")
+
+werkzaamheden <- rbind(werkzaamheden.cbm, werkzaamheden.spin)
 
 ### test
 #routes <- readRDS("./R/app/data/routes.rds")
@@ -28,7 +31,8 @@ ui <- (fluidPage(
       # __user input -----
       dateInput( 'dateInputVan',
                  label     = "Van", 
-                 value     = min(as.Date(werkzaamheden$van, tz = "Europe/Amsterdam"), na.rm = TRUE),
+                 value     = NULL,
+                 #value     = min(as.Date(werkzaamheden$van, tz = "Europe/Amsterdam"), na.rm = TRUE),
                  min       = min(as.Date(werkzaamheden$van, tz = "Europe/Amsterdam"), na.rm = TRUE),
                  max       = max(as.Date(werkzaamheden$tot, tz = "Europe/Amsterdam"), na.rm = TRUE),
                  format    = "dd-mm-yyyy",
@@ -127,6 +131,10 @@ server <- ( function( input, output, session ) {
   output$leafletMap <- renderLeaflet({
     leaflet() %>%
       addProviderTiles(providers$CartoDB.Positron) %>%
+      fitBounds(lng1 = 2.493896,
+                lat1 = 50.366489,
+                lng2 = 8.217773,
+                lat2 = 53.975474) %>%
       addScaleBar( position = "bottomleft" )
   })
 
