@@ -94,7 +94,7 @@ kaartdata <- df %>%
                                          Afsluiting == "Nee" ~ "belemmering",
                                          TRUE ~ "omleiding")) %>%
   dplyr::mutate(van = Start, tot = Eind) %>%
-  dplyr::mutate(label = paste0("<p><b>", Wegwerktype, "</b><br>",
+  dplyr::mutate(label = paste0("<p><b>", Nummer, "-", Wegwerktype, "</b><br>",
                                paste0(`Kenmerk Bestek`," - ", `Kenmerk Maatregel`), "<br>",
                                "start:", paste0(`Weg van`, `Zijde van`," ", `km van`), "<br>",
                                "eind:", paste0(`Weg tot`, `Zijde tot`, " ", `km tot`), "<br>",

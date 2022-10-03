@@ -27,7 +27,10 @@ ui <- (fluidPage(
   titlePanel("Stremmingen en omleidingen"),
   sidebarLayout(
     sidebarPanel(
-      h2( "Selectie" ),
+      h5("SPIN data dd 2022-09-26"),
+      h5("Dit is een beta versie van de kaart."),
+      h5("Vragen? Bel of mail Wim Breedveld"),
+      h2("Selectie"),
       # __user input -----
       dateInput( 'dateInputVan',
                  label     = "Van", 
@@ -130,12 +133,14 @@ server <- ( function( input, output, session ) {
 
   output$leafletMap <- renderLeaflet({
     leaflet() %>%
-      addProviderTiles(providers$CartoDB.Positron) %>%
+      addTiles() %>%
+      #addProviderTiles(providers$CartoDB.Positron) %>%
       fitBounds(lng1 = 2.493896,
                 lat1 = 50.366489,
                 lng2 = 8.217773,
                 lat2 = 53.975474) %>%
       addScaleBar( position = "bottomleft" )
+      
   })
 
   plaatjes <- reactive({
@@ -156,7 +161,10 @@ server <- ( function( input, output, session ) {
                    options = arrowheadOptions(size = "15px",frequency = "endonly")
       ) %>%
       #opnieuw opbouwen legenda
-      clearControls() 
+      clearControls() %>%
+      leaflet.extras2::addEasyprint(options = easyprintOptions(position = "topleft",
+                                                               exportOnly=FALSE, 
+                                                               filename ="Anmerkung"))
     # %>%
     #   addLayersControl(
     #     baseGroups = c( "OSM (default)", "PDOK luchtfoto" ),
